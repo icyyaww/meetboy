@@ -1,0 +1,47 @@
+name: Deploy Playground
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+  workflow_run:
+    branches:
+      - master
+    workflows:
+      # Wait until "Publish turms-admin" is completed
+      # because it's always the slowest workflow
+      - "Publish turms-admin"
+#      - "Publish turms-gateway"
+#      - "Publish turms-service"
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ !github.event.workflow_run || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Set up WARP
+        uses: fscarmen/warp-on-actions@v1.1
+        with:
+          stack: dual
+
+      - name: SSH
+        # FIXME: Use the "master" branch as a workaround because
+        # ssh-action hasn't released a new version that supports IPv6.
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLAYGROUND_SSH_HOST }}
+          username: ${{ secrets.PLAYGROUND_SSH_USERNAME }}
+          key: ${{ secrets.PLAYGROUND_SSH_KEY }}
+          protocol: tcp6
+          script_stop: true
+          script: |
+            cd /opt/turms
+            sudo docker compose -f docker-compose.standalone.yml down --remove-orphans
+            sudo docker system prune -a -f
+            sudo docker system prune --volumes -f
+            sudo rm -rf /var/log/journal
+            sudo git reset --hard
+            sudo git pull
+            sudo ENV=dev,demo INITIAL_ROOT_PASSWORD='${{ secrets.PLAYGROUND_ROOT_PASSWORD }}' docker compose -f docker-compose.standalone.yml --profile monitoring up --force-recreate -d

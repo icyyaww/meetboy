@@ -1,0 +1,64 @@
+name: Test Docker Compose
+
+on: [ push, pull_request ]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Validate
+        run: docker compose -f docker-compose.standalone.yml config -q
+
+      - name: Check Service Health
+        # language=sh
+        run: |
+          sed -i 's|pull_policy: always|pull_policy: never|g' docker-compose.standalone.yml
+          echo "Docker compose file to run with:"
+          cat docker-compose.standalone.yml
+          
+          docker build -t "ghcr.io/turms-im/turms-admin:latest" -f turms-admin/Dockerfile .
+          docker build -t "ghcr.io/turms-im/turms-gateway:latest" -f turms-gateway/Dockerfile .
+          docker build -t "ghcr.io/turms-im/turms-service:latest" -f turms-service/Dockerfile .
+
+          export COMPOSE_PROFILES="conference,elasticsearch,storage"
+          export ENV=prod
+          
+          docker compose -f docker-compose.standalone.yml up -d
+
+          sleep 10
+          RETRY=0
+          INSTANCE_IDS=$(docker compose -f docker-compose.standalone.yml ps -q)
+          DISPLAY_NAMES=$(echo "$INSTANCE_IDS" | xargs -I {} docker inspect --format="{{.Name}} ({{.ID}})" {})
+          echo "Services for checking health: $DISPLAY_NAMES"
+          while true
+          do
+            ALL_HEALTHY=true
+            for INSTANCE_ID in $INSTANCE_IDS; do
+              HEALTH_STATUS=$(docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" "$INSTANCE_ID")
+              DISPLAY_NAME=$(docker inspect --format="{{.Name}} ({{.ID}})" "$INSTANCE_ID")
+              if [ -z "$HEALTH_STATUS" ]; then
+                echo "Service $DISPLAY_NAME does not have a health check configured, passing through"
+              elif [ "$HEALTH_STATUS" = "healthy" ]; then
+                echo "Service $DISPLAY_NAME is healthy"
+              else
+                LOGS=$(docker inspect --format="{{json .State.Health}}" $INSTANCE_ID | jq)
+                echo "Service $DISPLAY_NAME is not healthy: $LOGS"
+                ALL_HEALTHY=false
+                break
+              fi
+            done
+            if [ $ALL_HEALTHY = true ]; then
+              echo "All services are healthy"
+              break
+            fi
+            if [ $RETRY -eq 5 ]; then
+              echo "Failed to start services, some services are not healthy"
+              exit 1
+            fi
+            echo "Some services are not healthy. Retry times: $RETRY. Retrying..."
+            sleep 10
+            ((RETRY++))
+          done

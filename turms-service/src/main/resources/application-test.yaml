@@ -1,0 +1,69 @@
+spring:
+  netty:
+    leak-detection: paranoid
+
+############################### Turms ###############################
+
+turms:
+  logging:
+    console:
+      enabled: true
+  plugin:
+    js:
+      debug:
+        enabled: true
+  service:
+    admin-api:
+      debug:
+        enabled: true
+    client-api:
+      logging:
+        included-notification-categories:
+          - category: all
+    fake:
+      enabled: true
+      clear-all-collections-before-faking: true
+    message:
+      check-if-target-active-and-not-deleted: false
+    group:
+      info:
+        user-defined-attributes:
+          allowed-attributes:
+            - source-name: "key-string"
+              value:
+                type: string
+            - source-name: "key-int"
+              value:
+                type: int
+            - source-name: "key-double"
+              value:
+                type: double
+            - source-name: "key-bool"
+              value:
+                type: bool
+            - source-name: "key-array"
+              value:
+                type: array
+    user:
+      info:
+        user-defined-attributes:
+          allowed-attributes:
+            - source-name: "key-string"
+              value:
+                type: string
+            - source-name: "key-int"
+              value:
+                type: int
+            - source-name: "key-double"
+              value:
+                type: double
+            - source-name: "key-bool"
+              value:
+                type: bool
+            - source-name: "key-array"
+              value:
+                type: array
+turms-plugin:
+  minio:
+    retry:
+      enabled: false
