@@ -60,6 +60,8 @@ turms:
             frozen:
               shards:
                 - shard01
+      conference:
+        uri: mongodb://localhost:27017/turms-dev
 turms-plugin:
   minio:
     retry:

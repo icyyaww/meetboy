@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # 简化的 MongoDB（单实例，开发用）
+  mongodb-dev:
+    image: mongo:7.0
+    container_name: turms-mongodb-dev
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: turms-dev
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+
+  # Redis
+  redis-dev:
+    image: redis:7.4-alpine
+    container_name: turms-redis-dev
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongodb_data:
+  redis_data:

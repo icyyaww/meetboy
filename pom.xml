@@ -76,12 +76,10 @@
     </properties>
 
     <modules>
-        <!-- Aggregation -->
-        <module>turms-client-kotlin</module>
-
+        <!-- Plugin Demo -->
         <module>turms-plugin-demo</module>
 
-        <!-- Inheritance -->
+        <!-- Server Components -->
         <module>turms-server-common</module>
         <module>turms-server-test-common</module>
 
@@ -89,12 +87,14 @@
         <module>turms-gateway</module>
         <module>turms-service</module>
 
+        <!-- Plugins -->
         <module>turms-plugins/turms-plugin-antispam</module>
         <module>turms-plugins/turms-plugin-livekit</module>
         <module>turms-plugins/turms-plugin-minio</module>
         <module>turms-plugins/turms-plugin-push</module>
         <module>turms-plugins/turms-plugin-rasa</module>
 
+        <!-- Testing -->
         <module>turms-server-test</module>
     </modules>
 
@@ -365,6 +365,17 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgs>
+                        <arg>--add-exports</arg>
+                        <arg>java.base/jdk.internal.vm.annotation=ALL-UNNAMED</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
@@ -374,6 +385,7 @@
                         <include>**/*Tests.java</include>
                     </includes>
                     <skipTests>${skipUTs}</skipTests>
+                    <argLine>--add-exports java.base/jdk.internal.vm.annotation=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
 
@@ -389,6 +401,7 @@
                         <include>**/*ST.java</include>
                     </includes>
                     <skipITs>${skipITs}</skipITs>
+                    <argLine>--add-exports java.base/jdk.internal.vm.annotation=ALL-UNNAMED</argLine>
                 </configuration>
                 <executions>
                     <execution>

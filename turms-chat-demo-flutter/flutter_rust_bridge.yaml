@@ -1,4 +1,0 @@
-# https://cjycode.com/flutter_rust_bridge/v1/command_line.html
-rust_input: crate::api
-rust_root: rust/
-dart_output: lib/infra/rust

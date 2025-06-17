@@ -8,6 +8,7 @@ turms:
   cluster:
     connection:
       server:
+        port: 7610
         port-auto-increment: true
     shared-config:
       mongo:

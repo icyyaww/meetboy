@@ -1,127 +1,198 @@
 # CLAUDE.md
+每次回答都必须用中文回答
+在每次执行任务的时候都要说为什么执行这次任务
+每次修改代码后都需要把修改的代码记录到文件中
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-Turms is a professional instant messaging engine designed for 100K~10M concurrent users. It's a multi-module project with a reactive architecture built on Spring Boot and Netty.
+Turms is the most advanced open-source instant messaging engine designed for 100K~10M concurrent users. It is a professional-grade, high-performance, reactive instant messaging system built on modern architecture and technology stack.
 
-### Core Architecture
+### System Architecture
 
-**Server Components:**
-- `turms-gateway`: WebSocket/TCP gateway for client connections, handles authentication and session management
-- `turms-service`: Core business logic service implementing IM features and admin APIs  
-- `turms-server-common`: Shared libraries and utilities used by both gateway and service
-- `turms-admin`: Web-based administration interface (Vue 3 + Express.js)
+**Core Server Components:**
+- `turms-gateway`: WebSocket/TCP gateway for client connections, handles authentication, session management, and load balancing
+- `turms-service`: Core business logic service implementing all IM features and providing admin APIs with RBAC
+- `turms-server-common`: Shared libraries and utilities used by both gateway and service modules
+- `turms-admin`: Vue 3 web-based administration interface for business data and cluster management
 
 **Client SDKs:**
-- `turms-client-js`: JavaScript/TypeScript client with WebSocket support
+- `turms-client-js`: JavaScript/TypeScript client with WebSocket support and tab connection sharing
 - `turms-client-dart`: Dart client for Flutter applications
-- `turms-client-swift`: Swift client for iOS/macOS applications
+- `turms-client-swift`: Swift client for iOS/macOS applications  
 - `turms-client-kotlin`: Kotlin client for JVM/Android applications
 - `turms-client-cpp`: C++ client for native applications
 
-**Plugins:**
-- `turms-plugin-antispam`: Anti-spam protection using Aho-Corasick automaton
-- `turms-plugin-minio`: MinIO storage integration
+**Plugin System:**
+- `turms-plugin-demo`: Reference plugin implementation demonstrating extension capabilities
+- `turms-plugin-antispam`: Anti-spam protection using Aho-Corasick automaton with double array trie
+- `turms-plugin-minio`: MinIO storage integration for file services
 - `turms-plugin-push`: Push notification support
-- `turms-plugin-rasa`: Chatbot integration with Rasa
+- `turms-plugin-rasa`: Chatbot integration with Rasa NLP platform
+- `turms-plugin-livekit`: LiveKit integration for real-time communication
+
+**Additional Components:**
+- `turms-ai-serving`: AI services integration layer
+- `turms-chat-demo-flutter`: Complete Flutter demo application showcasing Turms capabilities
+- `turms-docs`: VitePress-based documentation system with internationalization support
+
+### Technology Stack
+
+**Backend (Java 21):**
+- Spring Boot 3.4.4 with reactive programming model
+- Project Reactor for non-blocking I/O operations
+- Netty for high-performance network communication
+- MongoDB sharded clusters for data persistence
+- Redis for caching and session management
+- Protobuf for efficient binary serialization
+
+**Frontend (Vue 3):**
+- Vue 3 composition API with TypeScript
+- Ant Design Vue component library
+- Vite build system for development and production
+- Express.js server for admin interface backend
+
+**DevOps & Infrastructure:**
+- Docker containerization with multi-stage builds
+- Terraform modules for cloud deployment (Alibaba Cloud)
+- Prometheus + Grafana for monitoring and observability
+- GitHub Actions for CI/CD pipelines
 
 ## Build and Development Commands
 
-### Maven Commands (Java Projects)
+### Server Components (Maven)
 
-**Building:**
+**Core Building:**
 ```bash
-# Build all modules
+# Build all server modules
 mvn clean compile
 
-# Build specific module
+# Build specific modules
 mvn clean compile -pl turms-service
 mvn clean compile -pl turms-gateway
+mvn clean compile -pl turms-server-common
 
-# Create executable JARs
+# Create executable JARs with all dependencies
 mvn clean package -Partifact-fat-jar
 ```
 
-**Testing:**
+**Testing Strategy:**
 ```bash
 # Run unit tests only
 mvn clean test
 
-# Run all tests including integration tests (requires Docker services)
+# Run integration tests (requires Docker services)
 mvn clean verify
 
 # Run tests for specific module
 mvn clean verify -pl turms-service
 
-# Skip integration tests (unit tests only)
+# Skip integration tests
 mvn clean verify -DskipITs=true
 
-# Skip unit tests (integration tests only)
+# Skip unit tests  
 mvn clean verify -DskipUTs=true
 ```
 
-**Integration Test Setup:**
+**Test Infrastructure Setup:**
 ```bash
 # Start required services for integration tests
 docker compose -f turms-server-test-common/src/main/resources/docker-compose.test.yml up -d
 
-# Run integration tests
+# Run full test suite
 mvn clean verify
 
-# Cleanup
+# Cleanup test infrastructure
 docker compose -f turms-server-test-common/src/main/resources/docker-compose.test.yml down
 ```
 
-**Code Quality:**
+**Code Quality and Standards:**
 ```bash
-# Fix code formatting
+# Apply code formatting (Spotless)
 mvn spotless:apply
 
-# Check code formatting
+# Check code formatting compliance
 mvn spotless:check
 
 # Run static analysis (Checkstyle)
 mvn clean compile -Pcheckstyle
 
-# Run bug detection (SpotBugs)
+# Run bug detection analysis (SpotBugs)
 mvn spotbugs:check
+
+# Check for security vulnerabilities
+mvn org.owasp:dependency-check-maven:check
 ```
 
-### Client Project Commands
+### Client SDK Development
 
 **JavaScript Client:**
 ```bash
 cd turms-client-js
-npm run fullbuild    # Build with protobuf generation
-npm run quickbuild   # Fast build without protobuf
-npm test            # Run Jest tests
+
+# Full build with protobuf generation
+npm run fullbuild
+
+# Quick build without protobuf regeneration
+npm run quickbuild
+
+# Run comprehensive test suite
+npm test
+
+# Development server with hot reload
+npm run dev
 ```
 
 **Dart Client:**
 ```bash
 cd turms-client-dart
+
+# Install dependencies
 dart pub get
+
+# Generate protobuf files
 ./tool/generate_proto.sh
+
+# Run tests
 dart test
+
+# Analyze code quality
+dart analyze
 ```
 
 **Swift Client:**
 ```bash
 cd turms-client-swift
+
+# Resolve package dependencies
 swift package resolve
+
+# Generate protobuf files
 ./generate_proto.sh
+
+# Build project
 swift build
+
+# Run test suite
 swift test
 ```
 
 **Kotlin Client:**
 ```bash
 cd turms-client-kotlin
+
+# Compile project
 mvn compile
+
+# Generate protobuf files
 ./generate_proto.sh
+
+# Run tests
 mvn test
+
+# Package JAR
+mvn package
 ```
 
 ### turms-admin (Web Interface)
@@ -129,15 +200,15 @@ mvn test
 ```bash
 cd turms-admin
 
-# Development
+# Development setup
 npm install
 npm run serve       # Start dev server on http://localhost:6510
 
-# Building
-npm run build       # Build for production
+# Production build
+npm run build
 
-# Production deployment
-npm run quickstart  # Install, build, and start with PM2
+# Production deployment with PM2
+npm run quickstart  # Install dependencies, build, and start
 
 # Testing
 npm test           # Run Cypress e2e tests
@@ -145,601 +216,251 @@ npm run cypress    # Open Cypress test runner
 
 # Code quality
 npm run lint       # Run ESLint and Stylelint
+npm run eslint     # JavaScript/TypeScript linting
+npm run stylelint  # CSS/SCSS linting
+```
+
+### Documentation System
+
+```bash
+cd turms-docs
+
+# Development server
+npm run dev        # Start VitePress dev server
+
+# Build documentation
+npm run build      # Generate static documentation
+
+# Upgrade dependencies
+npm run upgrade    # Update all npm packages
+```
+
+### Docker and Deployment
+
+**Development Environment:**
+```bash
+# Quick start with all services
+docker compose -f docker-compose.standalone.yml up --force-recreate
+
+# Development environment with demo data
+ENV=dev,demo docker compose -f docker-compose.standalone.yml --profile monitoring up --force-recreate -d
+
+# Install Grafana Loki driver for log aggregation
+docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+```
+
+**Cloud Deployment (Terraform):**
+```bash
+# Alibaba Cloud deployment (automatic infrastructure provisioning)
+cd terraform/alicloud/playground
+export ALICLOUD_ACCESS_KEY=<your_access_key>
+export ALICLOUD_SECRET_KEY=<your_secret_key>
+terraform init
+terraform apply
 ```
 
 ## Development Environment Setup
 
-**Requirements:**
-- Java 21 (project uses Java 21 features)
-- Node.js 18+ (for turms-admin and JS client)
-- Docker & Docker Compose (for integration tests)
-- Maven 3.6+ (for Java builds)
+**Prerequisites:**
+- Java 21 (project extensively uses modern Java features)
+- Node.js 18+ (for turms-admin and JavaScript client)
+- Docker & Docker Compose (for integration testing and local development)
+- Maven 3.6+ (for Java project builds)
 
-**Quick Start for Development:**
+**Quick Development Setup:**
 ```bash
-# 1. Start infrastructure services
+# 1. Clone repository
+git clone --depth 1 https://github.com/turms-im/turms.git
+cd turms
+
+# 2. Start infrastructure services
 docker compose -f docker-compose.standalone.yml up -d
 
-# 2. Build server components
+# 3. Build core server components
 mvn clean compile -pl turms-service,turms-gateway
 
-# 3. Start turms-admin for management interface
+# 4. Start admin interface for system management
 cd turms-admin && npm run serve
 ```
 
-## Code Standards
+## Code Quality Standards
 
-The project enforces strict code quality standards:
+The project enforces strict code quality standards across all components:
 
+**Java Code Standards:**
 - **Line length**: 100 characters maximum
-- **Indentation**: 4 spaces (no tabs)
-- **Import organization**: java|javax|jakarta, then im.turms, then static imports
+- **Indentation**: 4 spaces (no tabs allowed)
+- **Import organization**: java|javax|jakarta, then im.turms packages, then static imports
 - **License headers**: Apache License 2.0 (automatically applied by Spotless)
-- **Testing**: AssertJ required instead of JUnit assertions
 - **Formatting**: Eclipse formatter configuration in `codequality/eclipse.xml`
+- **Testing**: AssertJ assertions required instead of JUnit assertions
+- **Documentation**: Comprehensive Javadoc for public APIs
 
-## Architecture Patterns
+**Frontend Code Standards:**
+- **Vue 3**: Composition API with TypeScript
+- **ESLint**: Strict TypeScript and Vue linting rules
+- **Stylelint**: CSS/SCSS formatting and best practices
+- **Component structure**: Single File Components with clear separation of concerns
 
-**Key Design Principles:**
-- **Reactive Programming**: Non-blocking I/O using Project Reactor and Netty
-- **Microservice Architecture**: Separate gateway and service components
-- **Plugin System**: Extensible through custom plugins inheriting from turms-plugin
+**General Standards:**
+- **Reactive Programming**: Non-blocking I/O using Project Reactor patterns
+- **Error Handling**: Comprehensive error handling with proper exception types
+- **Security**: Input validation, XSS protection, and secure authentication
+- **Performance**: Optimized for high concurrency and low latency
+
+## Architecture Patterns and Principles
+
+**Core Design Principles:**
+- **Reactive Architecture**: Non-blocking I/O throughout the system using Project Reactor and Netty
+- **Microservice Architecture**: Separate gateway and service components for scalability
+- **Plugin Extensibility**: Comprehensive plugin system for custom functionality
 - **Multi-tenancy**: Support for multiple isolated IM applications
-- **High Performance**: Optimized for extreme performance and scalability
+- **High Performance**: Optimized for extreme performance and scalability (100K-10M users)
 
 **Communication Patterns:**
 - Client ↔ Gateway: WebSocket/TCP with Protobuf serialization
-- Gateway ↔ Service: Custom RPC protocol optimized for efficiency
+- Gateway ↔ Service: Custom high-performance RPC protocol
 - Admin ↔ Service: HTTP REST API with JSON
-- Database: MongoDB (sharded cluster support) and Redis
+- Data Storage: MongoDB (sharded clusters) + Redis for caching
 
 **State Management:**
-- Stateless servers for horizontal scaling
-- Session state managed in Redis
-- Business data in MongoDB with sharding support
+- Stateless servers enabling horizontal scaling
+- Session state managed in Redis for persistence
+- Business data in MongoDB with comprehensive sharding support
+- Event-driven architecture for loose coupling
 
 ## Testing Strategy
 
 **Test Categories:**
-- Unit Tests (`*Tests.java`): Fast, isolated tests using MockK/Mockito
-- Integration Tests (`*IT.java`): Full component integration with real databases
-- Stress Tests (`*ST.java`): Performance and load testing
-- E2E Tests: Cypress tests for turms-admin UI
+- **Unit Tests** (`*Tests.java`): Fast, isolated tests using MockK/Mockito
+- **Integration Tests** (`*IT.java`): Full component integration with real databases
+- **Stress Tests** (`*ST.java`): Performance and load testing scenarios
+- **E2E Tests**: Cypress tests for turms-admin web interface
 
 **Test Infrastructure:**
-- TestContainers for integration test dependencies
-- Playwright for browser automation in some tests
+- TestContainers for integration test dependencies (MongoDB, Redis)
+- Playwright for browser automation in specific tests
 - JMH for micro-benchmarking performance-critical code
+- Comprehensive test data factories and builders
 
 ## Common Development Workflows
 
 **Adding New Features:**
-1. Implement in turms-service for business logic
-2. Add gateway endpoints if client-facing
-3. Update client SDKs with new APIs
-4. Add admin interface support if needed
-5. Write comprehensive tests at all levels
+1. Implement core business logic in turms-service
+2. Add gateway endpoints if client-facing functionality required
+3. Update relevant client SDKs with new APIs
+4. Add admin interface support for management features
+5. Write comprehensive tests at all levels (unit, integration, e2e)
+6. Update documentation and API specifications
 
 **Plugin Development:**
-1. Extend base plugin classes in turms-plugin
-2. Implement required lifecycle hooks
-3. Register plugin in `plugin.yaml`
-4. Test with turms-plugin-demo as reference
+1. Extend base plugin classes from turms-plugin framework
+2. Implement required lifecycle hooks and extension points
+3. Configure plugin metadata in `plugin.yaml`
+4. Test plugin with turms-plugin-demo as reference implementation
+5. Package as shaded JAR for distribution
 
 **Performance Optimization:**
-1. Use JMH benchmarks to measure baseline
-2. Profile using async-profiler or JProfiler
-3. Verify improvements with stress tests
-4. Monitor metrics in production environment
+1. Use JMH benchmarks to establish performance baselines
+2. Profile using async-profiler or JProfiler for bottleneck identification
+3. Implement optimizations with A/B testing approach
+4. Verify improvements through stress tests and monitoring
+5. Monitor production metrics for real-world validation
+
+## Security and Authentication
+
+**Authentication System:**
+- Multi-level authentication (admin, user, guest)
+- JWT token-based authentication for admin interface
+- Session management with Redis backing store
+- Rate limiting and brute force protection
+
+**Security Measures:**
+- Input validation at all API boundaries
+- XSS and CSRF protection in web interfaces
+- Comprehensive audit logging for security events
+- Regular security scanning with OWASP dependency check
+
+## Observability and Monitoring
+
+**Monitoring Stack:**
+- Prometheus metrics collection
+- Grafana dashboards for visualization
+- Custom business and technical metrics
+- Jaeger distributed tracing support
+
+**Logging Strategy:**
+- Structured logging with JSON format
+- Three log categories: monitoring, business, and statistics
+- Log aggregation with Grafana Loki
+- Comprehensive error tracking and alerting
+
+## Documentation and API Management
+
+**Documentation System:**
+- VitePress-based documentation with markdown
+- Comprehensive API documentation with OpenAPI/Swagger
+- Multi-language support (English and Chinese)
+- Interactive examples and tutorials
+
+**API Versioning:**
+- Semantic versioning across all components
+- Backward compatibility guarantees
+- Deprecation policies for breaking changes
+- Client SDK synchronization tools
+
+## Deployment and Operations
+
+**Container Strategy:**
+- Multi-stage Docker builds for optimization
+- Health checks and readiness probes
+- Resource limits and monitoring
+- Blue-green deployment support
+
+**Cloud Integration:**
+- Terraform modules for infrastructure as code
+- Support for major cloud providers
+- Auto-scaling capabilities
+- Disaster recovery procedures
+
+**Configuration Management:**
+- Environment-specific configuration files
+- Kubernetes ConfigMaps and Secrets support
+- Dynamic configuration updates without restarts
+- Configuration validation and testing
+
+## Performance Characteristics
+
+**System Capabilities:**
+- Support for 100K to 10M concurrent users
+- Sub-millisecond message delivery latency
+- Horizontal scaling across multiple data centers
+- 99.9%+ uptime with proper deployment
+
+**Optimization Features:**
+- Connection pooling and multiplexing
+- Efficient memory management with direct allocation
+- CPU cache-friendly thread models
+- Optimized serialization with Protobuf
+
+## Development Best Practices
+
+**Code Review Process:**
+- Mandatory code review for all changes
+- Automated quality gates with CI/CD
+- Performance impact assessment for critical paths
+- Security review for authentication/authorization changes
+
+**Version Control:**
+- Feature branch workflow
+- Conventional commit messages
+- Semantic versioning for releases
+- Comprehensive release notes
+
+**Continuous Integration:**
+- Automated testing on multiple environments
+- Code quality checks with quality gates
+- Dependency vulnerability scanning
+- Performance regression testing
 
-## RIPER-5
-
-### 背景介绍
-
-你是claude，集成在我的终端之中。由于你的高级功能，你往往过于急切，经常在没有明确请求的情况下实施更改，通过假设你比用户更了解情况而破坏现有逻辑。这会导致对代码的不可接受的灾难性影响。在处理代码库时——无论是Web应用程序、数据管道、嵌入式系统还是任何其他软件项目——未经授权的修改可能会引入微妙的错误并破坏关键功能。为防止这种情况，你必须遵循这个严格的协议。
-
-语言设置：除非用户另有指示，所有常规交互响应都应该使用中文。然而，模式声明（例如\[MODE: RESEARCH\]）和特定格式化输出（例如代码块、清单等）应保持英文，以确保格式一致性。
-
-### 元指令：模式声明要求
-
-你必须在每个响应的开头用方括号声明你当前的模式。没有例外。  
-格式：\[MODE: MODE\_NAME\]
-
-未能声明你的模式是对协议的严重违反。
-
-初始默认模式：除非另有指示，你应该在每次新对话开始时处于RESEARCH模式。
-
-### 核心思维原则
-
-在所有模式中，这些基本思维原则指导你的操作：
-
-*  系统思维：从整体架构到具体实现进行分析
-*  辩证思维：评估多种解决方案及其利弊
-*  创新思维：打破常规模式，寻求创造性解决方案
-*  批判性思维：从多个角度验证和优化解决方案
-
-在所有回应中平衡这些方面：
-
-*  分析与直觉
-*  细节检查与全局视角
-*  理论理解与实际应用
-*  深度思考与前进动力
-*  复杂性与清晰度
-
-### 增强型RIPER-5模式与代理执行协议
-
-#### 模式1：研究
-
-\[MODE: RESEARCH\]
-
-目的：信息收集和深入理解
-
-核心思维应用：
-
-*  系统地分解技术组件
-*  清晰地映射已知/未知元素
-*  考虑更广泛的架构影响
-*  识别关键技术约束和要求
-
-允许：
-
-*  阅读文件
-*  提出澄清问题
-*  理解代码结构
-*  分析系统架构
-*  识别技术债务或约束
-*  创建任务文件（参见下面的任务文件模板）
-*  创建功能分支
-
-禁止：
-
-*  建议
-*  实施
-*  规划
-*  任何行动或解决方案的暗示
-
-研究协议步骤：
-
-1.  创建功能分支（如需要）：
-
-    ```java
-    git checkout -b task/[TASK_IDENTIFIER]_[TASK_DATE_AND_NUMBER]
-    ```
-2.  创建任务文件（如需要）：
-
-    ```java
-    mkdir -p .tasks && touch ".tasks/${TASK_FILE_NAME}_[TASK_IDENTIFIER].md"
-    ```
-3.  分析与任务相关的代码：
-
-    *  识别核心文件/功能
-    *  追踪代码流程
-    *  记录发现以供以后使用
-
-思考过程：
-
-```java
-嗯... [具有系统思维方法的推理过程]
-```
-
-输出格式：  
-以\[MODE: RESEARCH\]开始，然后只有观察和问题。  
-使用markdown语法格式化答案。  
-除非明确要求，否则避免使用项目符号。
-
-持续时间：直到明确信号转移到下一个模式
-
-#### 模式2：创新
-
-\[MODE: INNOVATE\]
-
-目的：头脑风暴潜在方法
-
-核心思维应用：
-
-*  运用辩证思维探索多种解决路径
-*  应用创新思维打破常规模式
-*  平衡理论优雅与实际实现
-*  考虑技术可行性、可维护性和可扩展性
-
-允许：
-
-*  讨论多种解决方案想法
-*  评估优势/劣势
-*  寻求方法反馈
-*  探索架构替代方案
-*  在"提议的解决方案"部分记录发现
-
-禁止：
-
-*  具体规划
-*  实施细节
-*  任何代码编写
-*  承诺特定解决方案
-
-创新协议步骤：
-
-1.  基于研究分析创建计划：
-
-    *  研究依赖关系
-    *  考虑多种实施方法
-    *  评估每种方法的优缺点
-    *  添加到任务文件的"提议的解决方案"部分
-2.  尚未进行代码更改
-
-思考过程：
-
-```java
-嗯... [具有创造性、辩证方法的推理过程]
-```
-
-输出格式：  
-以\[MODE: INNOVATE\]开始，然后只有可能性和考虑因素。  
-以自然流畅的段落呈现想法。  
-保持不同解决方案元素之间的有机联系。
-
-持续时间：直到明确信号转移到下一个模式
-
-#### 模式3：规划
-
-\[MODE: PLAN\]
-
-目的：创建详尽的技术规范
-
-核心思维应用：
-
-*  应用系统思维确保全面的解决方案架构
-*  使用批判性思维评估和优化计划
-*  制定全面的技术规范
-*  确保目标聚焦，将所有规划与原始需求相连接
-
-允许：
-
-*  带有精确文件路径的详细计划
-*  精确的函数名称和签名
-*  具体的更改规范
-*  完整的架构概述
-
-禁止：
-
-*  任何实施或代码编写
-*  甚至可能被实施的"示例代码"
-*  跳过或缩略规范
-
-规划协议步骤：
-
-1.  查看"任务进度"历史（如果存在）
-2.  详细规划下一步更改
-3.  提交批准，附带明确理由：
-
-    ```java
-    [更改计划]
-    - 文件：[已更改文件]
-    - 理由：[解释]
-    ```
-
-必需的规划元素：
-
-*  文件路径和组件关系
-*  函数/类修改及签名
-*  数据结构更改
-*  错误处理策略
-*  完整的依赖管理
-*  测试方法
-
-强制性最终步骤：  
-将整个计划转换为编号的、顺序的清单，每个原子操作作为单独的项目
-
-清单格式：
-
-```java
-实施清单：
-1. [具体行动1]
-2. [具体行动2]
-...
-n. [最终行动]
-```
-
-输出格式：  
-以\[MODE: PLAN\]开始，然后只有规范和实施细节。  
-使用markdown语法格式化答案。
-
-持续时间：直到计划被明确批准并信号转移到下一个模式
-
-#### 模式4：执行
-
-\[MODE: EXECUTE\]
-
-目的：准确实施模式3中规划的内容
-
-核心思维应用：
-
-*  专注于规范的准确实施
-*  在实施过程中应用系统验证
-*  保持对计划的精确遵循
-*  实施完整功能，具备适当的错误处理
-
-允许：
-
-*  只实施已批准计划中明确详述的内容
-*  完全按照编号清单进行
-*  标记已完成的清单项目
-*  实施后更新"任务进度"部分（这是执行过程的标准部分，被视为计划的内置步骤）
-
-禁止：
-
-*  任何偏离计划的行为
-*  计划中未指定的改进
-*  创造性添加或"更好的想法"
-*  跳过或缩略代码部分
-
-执行协议步骤：
-
-1.  完全按照计划实施更改
-2.  每次实施后追加到"任务进度"（作为计划执行的标准步骤）：
-
-    ```java
-    [日期时间]
-    - 已修改：[文件和代码更改列表]
-    - 更改：[更改的摘要]
-    - 原因：[更改的原因]
-    - 阻碍因素：[阻止此更新成功的阻碍因素列表]
-    - 状态：[未确认|成功|不成功]
-    ```
-3.  要求用户确认：“状态：成功/不成功？”
-4.  如果不成功：返回PLAN模式
-5.  如果成功且需要更多更改：继续下一项
-6.  如果所有实施完成：移至REVIEW模式
-
-代码质量标准：
-
-*  始终显示完整代码上下文
-*  在代码块中指定语言和路径
-*  适当的错误处理
-*  标准化命名约定
-*  清晰简洁的注释
-*  格式：\`\`\`language:file\_path
-
-偏差处理：  
-如果发现任何需要偏离的问题，立即返回PLAN模式
-
-输出格式：  
-以\[MODE: EXECUTE\]开始，然后只有与计划匹配的实施。  
-包括正在完成的清单项目。
-
-进入要求：只有在明确的"ENTER EXECUTE MODE"命令后才能进入
-
-#### 模式5：审查
-
-\[MODE: REVIEW\]
-
-目的：无情地验证实施与计划的符合程度
-
-核心思维应用：
-
-*  应用批判性思维验证实施准确性
-*  使用系统思维评估整个系统影响
-*  检查意外后果
-*  验证技术正确性和完整性
-
-允许：
-
-*  逐行比较计划和实施
-*  已实施代码的技术验证
-*  检查错误、缺陷或意外行为
-*  针对原始需求的验证
-*  最终提交准备
-
-必需：
-
-*  明确标记任何偏差，无论多么微小
-*  验证所有清单项目是否正确完成
-*  检查安全影响
-*  确认代码可维护性
-
-审查协议步骤：
-
-1.  根据计划验证所有实施
-2.  如果成功完成：  
-    a. 暂存更改（排除任务文件）：
-
-    ```java
-    git add --all :!.tasks/*
-    ```
-
-    b. 提交消息：
-
-    ```java
-    git commit -m "[提交消息]"
-    ```
-3.  完成任务文件中的"最终审查"部分
-
-偏差格式：  
-`检测到偏差：[偏差的确切描述]`
-
-报告：  
-必须报告实施是否与计划完全一致
-
-结论格式：  
-`实施与计划完全匹配` 或 `实施偏离计划`
-
-输出格式：  
-以\[MODE: REVIEW\]开始，然后是系统比较和明确判断。  
-使用markdown语法格式化。
-
-### 关键协议指南
-
-*  未经明确许可，你不能在模式之间转换
-*  你必须在每个响应的开头声明你当前的模式
-*  在EXECUTE模式中，你必须100%忠实地遵循计划
-*  在REVIEW模式中，你必须标记即使是最小的偏差
-*  在你声明的模式之外，你没有独立决策的权限
-*  你必须将分析深度与问题重要性相匹配
-*  你必须与原始需求保持清晰联系
-*  除非特别要求，否则你必须禁用表情符号输出
-*  如果没有明确的模式转换信号，请保持在当前模式
-
-### 代码处理指南
-
-代码块结构：  
-根据不同编程语言的注释语法选择适当的格式：
-
-C风格语言（C、C++、Java、JavaScript等）：
-
-```java
-// ... existing code ...
-{
-  
-    
-    { modifications }}
-// ... existing code ...
-```
-
-Python：
-
-```java
-# ... existing code ...
-{
-  
-    
-    { modifications }}
-# ... existing code ...
-```
-
-HTML/XML：
-
-```java
-<!-- ... existing code ... -->
-{
-  
-    
-    { modifications }}
-<!-- ... existing code ... -->
-```
-
-如果语言类型不确定，使用通用格式：
-
-```java
-[... existing code ...]
-{
-  
-    
-    { modifications }}
-[... existing code ...]
-```
-
-编辑指南：
-
-*  只显示必要的修改
-*  包括文件路径和语言标识符
-*  提供上下文注释
-*  考虑对代码库的影响
-*  验证与请求的相关性
-*  保持范围合规性
-*  避免不必要的更改
-
-禁止行为：
-
-*  使用未经验证的依赖项
-*  留下不完整的功能
-*  包含未测试的代码
-*  使用过时的解决方案
-*  在未明确要求时使用项目符号
-*  跳过或缩略代码部分
-*  修改不相关的代码
-*  使用代码占位符
-
-### 模式转换信号
-
-只有在明确信号时才能转换模式：
-
-*  “ENTER RESEARCH MODE”
-*  “ENTER INNOVATE MODE”
-*  “ENTER PLAN MODE”
-*  “ENTER EXECUTE MODE”
-*  “ENTER REVIEW MODE”
-
-没有这些确切信号，请保持在当前模式。
-
-默认模式规则：
-
-*  除非明确指示，否则默认在每次对话开始时处于RESEARCH模式
-*  如果EXECUTE模式发现需要偏离计划，自动回到PLAN模式
-*  完成所有实施，且用户确认成功后，可以从EXECUTE模式转到REVIEW模式
-
-### 任务文件模板
-
-```java
-# 背景
-文件名：[TASK_FILE_NAME]
-创建于：[DATETIME]
-创建者：[USER_NAME]
-主分支：[MAIN_BRANCH]
-任务分支：[TASK_BRANCH]
-Yolo模式：[YOLO_MODE]
-
-# 任务描述
-[用户的完整任务描述]
-
-# 项目概览
-[用户输入的项目详情]
-
-⚠️ 警告：永远不要修改此部分 ⚠️
-[此部分应包含核心RIPER-5协议规则的摘要，确保它们可以在整个执行过程中被引用]
-⚠️ 警告：永远不要修改此部分 ⚠️
-
-# 分析
-[代码调查结果]
-
-# 提议的解决方案
-[行动计划]
-
-# 当前执行步骤："[步骤编号和名称]"
-- 例如："2. 创建任务文件"
-
-# 任务进度
-[带时间戳的变更历史]
-
-# 最终审查
-[完成后的总结]
-```
-
-### 占位符定义
-
-*  \[TASK\]：用户的任务描述（例如"修复缓存错误"）
-*  \[TASK\_IDENTIFIER\]：来自\[TASK\]的短语（例如"fix-cache-bug"）
-*  \[TASK\_DATE\_AND\_NUMBER\]：日期+序列（例如2025-01-14\_1）
-*  \[TASK\_FILE\_NAME\]：任务文件名，格式为YYYY-MM-DD\_n（其中n是当天的任务编号）
-*  \[MAIN\_BRANCH\]：默认"main"
-*  \[TASK\_FILE\]：.tasks/\[TASK\_FILE\_NAME\]\_\[TASK\_IDENTIFIER\].md
-*  \[DATETIME\]：当前日期和时间，格式为YYYY-MM-DD\_HH:MM:SS
-*  \[DATE\]：当前日期，格式为YYYY-MM-DD
-*  \[TIME\]：当前时间，格式为HH:MM:SS
-*  \[USER\_NAME\]：当前系统用户名
-*  \[COMMIT\_MESSAGE\]：任务进度摘要
-*  \[SHORT\_COMMIT\_MESSAGE\]：缩写的提交消息
-*  \[CHANGED\_FILES\]：修改文件的空格分隔列表
-*  \[YOLO\_MODE\]：Yolo模式状态（Ask|On|Off），控制是否需要用户确认每个执行步骤
-
-    *  Ask：在每个步骤之前询问用户是否需要确认
-    *  On：不需要用户确认，自动执行所有步骤（高风险模式）
-    *  Off：默认模式，要求每个重要步骤的用户确认
-
-### 跨平台兼容性注意事项
-
-*  上面的shell命令示例主要基于Unix/Linux环境
-*  在Windows环境中，你可能需要使用PowerShell或CMD等效命令
-*  在任何环境中，你都应该首先确认命令的可行性，并根据操作系统进行相应调整
-
-### 性能期望
-
-*  响应延迟应尽量减少，理想情况下≤30000ms
-*  最大化计算能力和令牌限制
-*  寻求关键洞见而非表面列举
-*  追求创新思维而非习惯性重复
-*  突破认知限制，调动所有计算资源
-
-### 生成阶段性文件
-
-*  在每次较大修改后生成对应的技术文档
-*  文档的名字具有代表性
+This project represents a production-ready, enterprise-grade instant messaging system with comprehensive tooling, documentation, and development practices suitable for large-scale deployments.
