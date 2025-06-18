@@ -253,4 +253,16 @@ public class UserRepository extends BaseRepository<User, Long> {
         return mongoClient.exists(entityClass, filter);
     }
 
+    public Mono<Boolean> existsByPhoneNumber(String phoneNumber) {
+        Filter filter = Filter.newBuilder(1)
+                .eq(User.Fields.PHONE_NUMBER, phoneNumber);
+        return mongoClient.exists(entityClass, filter);
+    }
+
+    public Mono<User> findByPhoneNumber(String phoneNumber) {
+        Filter filter = Filter.newBuilder(1)
+                .eq(User.Fields.PHONE_NUMBER, phoneNumber);
+        return mongoClient.findOne(entityClass, filter);
+    }
+
 }
