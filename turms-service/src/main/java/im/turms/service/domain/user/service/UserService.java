@@ -358,7 +358,10 @@ public class UserService implements RpcUserService {
                 null,
                 now,
                 isActive,
-                null);
+                null, // phoneNumber
+                null, // phoneVerified
+                null, // registrationType
+                null); // userDefinedAttributes
         Long finalId = id;
         String finalName = name;
         Boolean putEsDocInTransaction =
@@ -391,6 +394,87 @@ public class UserService implements RpcUserService {
                                 t -> LOGGER
                                         .error("Caught an error while creating a doc for the user: "
                                                 + finalId, t));
+            }
+        });
+    }
+
+    public Mono<User> addUserWithPhone(
+            @NotNull String phoneNumber,
+            @Nullable String rawPassword,
+            @Nullable String name,
+            @NotNull im.turms.server.common.domain.user.constant.RegistrationType registrationType) {
+        try {
+            Validator.notNull(phoneNumber, "phoneNumber");
+            Validator.notNull(registrationType, "registrationType");
+            Validator.length(rawPassword,
+                    "rawPassword",
+                    minPasswordLengthForCreate,
+                    maxPasswordLength);
+            Validator.maxLength(name, "name", maxNameLength);
+        } catch (ResponseException e) {
+            return Mono.error(e);
+        }
+        
+        Date now = new Date();
+        Long id = node.nextLargeGapId(ServiceType.USER);
+        byte[] password = StringUtil.isEmpty(rawPassword)
+                ? null
+                : passwordManager.encodeUserPassword(rawPassword);
+        name = name == null ? "" : name;
+        String intro = "";
+        ProfileAccessStrategy profileAccessStrategy = ProfileAccessStrategy.ALL;
+        Long roleId = DEFAULT_USER_ROLE_ID;
+        Boolean isActive = activateUserWhenAdded;
+        
+        User user = new User(
+                id,
+                password,
+                name,
+                intro,
+                null, // profilePicture
+                profileAccessStrategy,
+                roleId,
+                now, // registrationDate
+                null, // deletionDate
+                now, // lastUpdatedDate
+                isActive,
+                phoneNumber, // phoneNumber
+                true, // phoneVerified
+                registrationType, // registrationType
+                null // userDefinedAttributes
+        );
+        
+        String finalName = name;
+        Boolean putEsDocInTransaction =
+                elasticsearchManager.isUserUseCaseEnabled() && !finalName.isBlank()
+                        ? elasticsearchManager.isTransactionWithMongoEnabledForUser()
+                        : null;
+        Mono<User> addUser = userRepository.inTransaction(session -> {
+            Mono<?> mono = userRepository.insert(user, session)
+                    .then(userRelationshipGroupService
+                            .createRelationshipGroup(id, 0, "", now, session));
+            if (Boolean.TRUE.equals(putEsDocInTransaction)) {
+                mono = mono.then(elasticsearchManager.putUserDoc(id, finalName));
+            }
+            return mono.then(userVersionService.upsertEmptyUserVersion(user.getId(), now, session)
+                    .onErrorResume(t -> {
+                        LOGGER.error(
+                                "Caught an error while upserting a version for the user ({}) after creating the user",
+                                user.getId(),
+                                t);
+                        return Mono.empty();
+                    }))
+                    .thenReturn(user)
+                    .retryWhen(TRANSACTION_RETRY);
+        });
+        return addUser.doOnSuccess(ignored -> {
+            registeredUsersCounter.increment();
+            if (Boolean.FALSE.equals(putEsDocInTransaction)) {
+                elasticsearchManager.putUserDoc(id, finalName)
+                        .subscribe(null,
+                                t -> LOGGER
+                                        .error("Caught an error while creating a doc for the user: "
+                                                + id, t));
             }
         });
     }
