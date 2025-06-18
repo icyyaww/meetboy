@@ -462,6 +462,9 @@ public final class MongoFakeDataGenerator {
                     null,
                     userDate,
                     true,
+                    null, // phoneNumber
+                    null, // phoneVerified
+                    null, // registrationType
                     userDefinedAttributes);
             UserVersion userVersion = new UserVersion(
                     (long) i,
