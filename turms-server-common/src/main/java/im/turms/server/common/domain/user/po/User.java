@@ -26,6 +26,7 @@ import lombok.Data;
 import im.turms.server.common.access.client.dto.constant.ProfileAccessStrategy;
 import im.turms.server.common.domain.common.po.BaseEntity;
 import im.turms.server.common.domain.common.po.Customizable;
+import im.turms.server.common.domain.user.constant.RegistrationType;
 import im.turms.server.common.storage.mongo.entity.annotation.Document;
 import im.turms.server.common.storage.mongo.entity.annotation.EnumNumber;
 import im.turms.server.common.storage.mongo.entity.annotation.Field;
@@ -81,6 +82,16 @@ public final class User extends BaseEntity implements Customizable {
     @Field(Fields.IS_ACTIVE)
     private final Boolean isActive;
 
+    @Field(Fields.PHONE_NUMBER)
+    private final String phoneNumber;
+
+    @Field(Fields.PHONE_VERIFIED)
+    private final Boolean phoneVerified;
+
+    @Field(Fields.REGISTRATION_TYPE)
+    @EnumNumber
+    private final RegistrationType registrationType;
+
     private final Map<String, Object> userDefinedAttributes;
 
     public static final class Fields {
@@ -99,6 +110,9 @@ public final class User extends BaseEntity implements Customizable {
         public static final String DELETION_DATE = "dd";
         public static final String LAST_UPDATED_DATE = "lud";
         public static final String IS_ACTIVE = "act";
+        public static final String PHONE_NUMBER = "pn";
+        public static final String PHONE_VERIFIED = "pv";
+        public static final String REGISTRATION_TYPE = "rt";
 
         private Fields() {
         }

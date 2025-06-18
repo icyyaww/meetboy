@@ -143,6 +143,10 @@ public enum ResponseStatusCode {
     NOT_RECIPIENT_TO_UPDATE_FRIEND_REQUEST(2606,
             "Only the recipient of the friend request can handle the friend request", 403),
 
+    // User - Phone Registration
+    PHONE_NUMBER_ALREADY_EXISTS(2700, "The phone number already exists", 409),
+    VERIFICATION_CODE_MISMATCH(2701, "The verification code does not match or has expired", 400),
+
     // Group
 
     // Group - Info
