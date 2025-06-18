@@ -48,6 +48,7 @@ import im.turms.service.domain.message.service.MessageService;
 import im.turms.service.domain.user.access.admin.dto.request.AddUserDTO;
 import im.turms.service.domain.user.access.admin.dto.request.UpdateUserDTO;
 import im.turms.service.domain.user.access.admin.dto.response.UserStatisticsDTO;
+import im.turms.service.domain.user.service.PhoneRegistrationService;
 import im.turms.service.domain.user.service.UserService;
 
 import static im.turms.server.common.access.admin.permission.AdminPermission.USER_CREATE;
@@ -63,14 +64,17 @@ public class UserController extends BaseController {
 
     private final UserService userService;
     private final MessageService messageService;
+    private final PhoneRegistrationService phoneRegistrationService;
 
     public UserController(
             TurmsPropertiesManager propertiesManager,
             UserService userService,
-            MessageService messageService) {
+            MessageService messageService,
+            PhoneRegistrationService phoneRegistrationService) {
         super(propertiesManager);
         this.userService = userService;
         this.messageService = messageService;
+        this.phoneRegistrationService = phoneRegistrationService;
     }
 
     @PostMapping
@@ -86,6 +90,25 @@ public class UserController extends BaseController {
                 addUserDTO.registrationDate(),
                 addUserDTO.isActive());
         return HttpHandlerResult.okIfTruthy(addUser);
+    }
+
+    @PostMapping("send-verification-code")
+    public Mono<HttpHandlerResult<ResponseDTO<String>>> sendVerificationCode(
+            @QueryParam("phoneNumber") String phoneNumber,
+            @QueryParam("ipAddress") String ipAddress) {
+        return phoneRegistrationService.sendVerificationCode(phoneNumber, ipAddress)
+                .then(Mono.fromCallable(() -> HttpHandlerResult.okIfTruthy("验证码发送成功")));
+    }
+
+    @PostMapping("register-with-phone")
+    public Mono<HttpHandlerResult<ResponseDTO<User>>> registerWithPhone(
+            @QueryParam("phoneNumber") String phoneNumber,
+            @QueryParam("verificationCode") String verificationCode,
+            @QueryParam("password") String password,
+            @QueryParam("nickname") String nickname) {
+        return phoneRegistrationService.registerWithPhone(
+                phoneNumber, verificationCode, password, nickname)
+                .map(HttpHandlerResult::okIfTruthy);
     }
 
     @GetMapping
