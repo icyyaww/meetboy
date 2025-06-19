@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.LongConsumer;
 
 import io.netty.util.internal.shaded.org.jctools.util.Pow2;
-import jdk.internal.vm.annotation.Contended;
 
 /**
  * The implementation has been highly optimized for the case of a single producer and a single
@@ -39,17 +38,13 @@ public class SpscGrowableLongRingBuffer implements RingBuffer {
     private static final VarHandle VALUES_HANDLE =
             MethodHandles.arrayElementVarHandle(long[].class);
 
-    @Contended
     private volatile long[] values;
-    @Contended
     private volatile int readIndex;
-    @Contended
     private volatile int writeIndex;
     /**
      * The lock is used to ensure the resize operation and the drain operation won't happen
      * simultaneously.
      */
-    @Contended
     private volatile int lock;
 
     public SpscGrowableLongRingBuffer(int initialCapacity) {

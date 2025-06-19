@@ -1,0 +1,203 @@
+# Turms API Gateway Configuration
+server:
+  port: 8080
+
+spring:
+  application:
+    name: turms-api-gateway
+  
+  cloud:
+    # 服务发现配置
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        enabled: true
+        service-name: ${spring.application.name}
+        health-check-interval: 10s
+        health-check-timeout: 3s
+        health-check-critical-timeout: 30s
+        prefer-ip-address: true
+        
+    # Gateway配置
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      
+      # 全局CORS配置
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+            maxAge: 3600
+
+      # 默认过滤器
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        - AddResponseHeader=X-Response-Default-Foo, Default-Bar
+        
+  # Redis配置（用于限流）
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+# 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 
+          - health
+          - info
+          - metrics
+          - prometheus
+          - gateway
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Turms Gateway特定配置
+turms:
+  gateway:
+    jwt:
+      secret: turms-secret-key-for-jwt-token-generation-and-validation-must-be-at-least-32-characters
+      expiration: 86400 # 24 hours in seconds
+    
+    # 限流配置
+    rate-limit:
+      default:
+        replenish-rate: 10
+        burst-capacity: 20
+        requested-tokens: 1
+      
+      # 不同服务的限流配置
+      services:
+        turms-service:
+          replenish-rate: 100
+          burst-capacity: 200
+        turms-tag-service:
+          replenish-rate: 50
+          burst-capacity: 100
+        turms-social-service:
+          replenish-rate: 30
+          burst-capacity: 60
+        turms-content-service:
+          replenish-rate: 20
+          burst-capacity: 40
+        turms-interaction-service:
+          replenish-rate: 40
+          burst-capacity: 80
+        turms-recommendation-service:
+          replenish-rate: 15
+          burst-capacity: 30
+    
+    # 熔断器配置
+    circuit-breaker:
+      default:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50.0
+        wait-duration-in-open-state: 30s
+        slow-call-rate-threshold: 50.0
+        slow-call-duration-threshold: 2s
+
+# 日志配置
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    im.turms.apigateway: DEBUG
+    reactor.netty: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/turms-api-gateway.log
+    max-size: 100MB
+    max-history: 30
+
+---
+# 开发环境配置
+spring:
+  config:
+    activate:
+      on-profile: dev
+      
+  cloud:
+    consul:
+      enabled: false
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+
+# 开发环境下的静态路由配置
+turms:
+  gateway:
+    services:
+      turms-gateway:
+        host: localhost
+        port: 9510
+        websocket-port: 10510
+      turms-service:
+        host: localhost
+        port: 8510
+      turms-tag-service:
+        host: localhost
+        port: 8085
+      turms-admin:
+        host: localhost
+        port: 6510
+
+---
+# 生产环境配置
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+# 生产环境安全配置
+turms:
+  gateway:
+    security:
+      cors:
+        allowed-origins:
+          - https://your-frontend-domain.com
+          - https://your-mobile-app-domain.com
+      jwt:
+        expiration: 3600 # 1 hour in production
+    
+    # 生产环境限流更严格
+    rate-limit:
+      default:
+        replenish-rate: 5
+        burst-capacity: 10
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    im.turms.apigateway: INFO
+    reactor.netty: WARN

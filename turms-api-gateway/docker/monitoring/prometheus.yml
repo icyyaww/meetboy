@@ -1,0 +1,46 @@
+# Prometheus configuration for Turms API Gateway monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus自身监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Turms API Gateway监控
+  - job_name: 'turms-api-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['turms-api-gateway:8080']
+    scrape_interval: 5s
+    scrape_timeout: 3s
+
+  # Redis监控
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+
+  # Consul监控
+  - job_name: 'consul'
+    static_configs:
+      - targets: ['consul:8500']
+
+  # 服务发现配置（当其他Turms服务注册到Consul时自动发现）
+  - job_name: 'consul-services'
+    consul_sd_configs:
+      - server: 'consul:8500'
+        datacenter: 'dc1'
+    relabel_configs:
+      - source_labels: [__meta_consul_service]
+        target_label: service
+      - source_labels: [__meta_consul_node]
+        target_label: node
+      - source_labels: [__meta_consul_tags]
+        target_label: tags

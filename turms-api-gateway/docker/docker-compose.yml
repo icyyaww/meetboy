@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  # Redis for rate limiting and caching
+  redis:
+    image: redis:7.4.1-alpine
+    container_name: turms-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Consul for service discovery
+  consul:
+    image: consul:1.17
+    container_name: turms-consul
+    ports:
+      - "8500:8500"
+    volumes:
+      - consul_data:/consul/data
+    command: >
+      consul agent -dev -client=0.0.0.0 -ui
+      -datacenter=dc1
+      -enable-script-checks
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/status/leader"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Turms API Gateway
+  turms-api-gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: turms-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_CLOUD_CONSUL_HOST=consul
+      - TURMS_GATEWAY_JWT_SECRET=turms-secret-key-for-jwt-token-generation-and-validation-must-be-at-least-32-characters
+    depends_on:
+      redis:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    restart: unless-stopped
+    volumes:
+      - gateway_logs:/app/logs
+
+  # Prometheus for monitoring
+  prometheus:
+    image: prom/prometheus:v2.48.1
+    container_name: turms-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: turms-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  consul_data:
+  prometheus_data:
+  grafana_data:
+  gateway_logs:
+
+networks:
+  default:
+    name: turms-network

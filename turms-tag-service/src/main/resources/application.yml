@@ -1,0 +1,166 @@
+# Turms标签服务配置文件
+
+# 服务配置
+server:
+  port: 8085
+
+# Spring配置
+spring:
+  application:
+    name: turms-tag-service
+  
+  # 配置文件激活
+  profiles:
+    active: dev
+    group:
+      dev:
+        - dev
+        - dev-latest
+      test:
+        - test 
+        - test-latest
+      prod:
+        - prod
+        - prod-latest
+  
+  # 编解码配置
+  codec:
+    max-in-memory-size: 64KB
+  
+  # 自动配置排除
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+
+# Turms标签服务配置
+turms:
+  tag-service:
+    # 基础配置
+    node-type: tag-service
+    port: 8085
+    
+    # MongoDB数据库配置
+    mongo:
+      host: localhost
+      port: 27017
+      database: turms-tag
+      username: 
+      password: 
+      # 连接池配置
+      connection-pool:
+        min-size: 0
+        max-size: 64
+        max-wait-time: 60000
+        max-connection-lifetime: 0
+        max-connection-idle-time: 0
+    
+    # 标签功能配置
+    tag:
+      # 基础功能
+      enabled: true
+      max-tag-name-length: 50
+      max-tag-description-length: 200
+      max-tags-per-user: 100
+      allow-custom-tags: true
+      allow-anonymous-access: false
+      
+      # 推荐功能
+      recommendation:
+        enabled: true
+        max-similar-users: 50
+        max-recommended-tags: 20
+        max-tag-cloud-size: 100
+        algorithm-type: hybrid
+        cache-time-minutes: 30
+      
+      # 性能配置
+      performance:
+        default-page-size: 20
+        max-page-size: 100
+        max-batch-size: 1000
+        enable-cache: true
+        cache-expire-minutes: 15
+
+# 日志配置
+logging:
+  level:
+    im.turms: INFO
+    org.springframework: WARN
+    org.mongodb: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/turms-tag-service.log
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,beans,configprops
+  endpoint:
+    health:
+      show-details: when-authorized
+
+---
+# 开发环境配置
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+turms:
+  tag-service:
+    tag:
+      max-tags-per-user: 1000  # 开发环境放宽限制
+      allow-anonymous-access: true  # 开发环境允许匿名访问
+      recommendation:
+        max-similar-users: 100
+        max-recommended-tags: 50
+
+logging:
+  level:
+    im.turms: DEBUG
+    org.springframework.data.mongodb: DEBUG
+
+---
+# 生产环境配置
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+turms:
+  tag-service:
+    tag:
+      max-tags-per-user: 50  # 生产环境更严格的限制
+      allow-custom-tags: false  # 生产环境可能需要审核自定义标签
+      recommendation:
+        max-similar-users: 30
+        max-recommended-tags: 10
+
+logging:
+  level:
+    im.turms: WARN
+
+---
+# 测试环境配置
+spring:
+  config:
+    activate:
+      on-profile: test
+
+turms:
+  tag-service:
+    mongo:
+      database: turms-tag-test  # 使用独立的测试数据库
+    tag:
+      allow-anonymous-access: true
+
+logging:
+  level:
+    im.turms: DEBUG
