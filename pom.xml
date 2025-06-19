@@ -76,16 +76,21 @@
     </properties>
 
     <modules>
+        <!-- Test Dependencies (must be built first) -->
+        <module>turms-server-test-common</module>
+        
+        <!-- Core Dependencies -->
+        <module>turms-server-common</module>
+
         <!-- Plugin Demo -->
         <module>turms-plugin-demo</module>
 
-        <!-- Server Components -->
-        <module>turms-server-common</module>
-        <module>turms-server-test-common</module>
-
-        <module>turms-ai-serving</module>
+        <!-- Server Components (depends on common) -->
+<!--        <module>turms-ai-serving</module>-->
+        <module>turms-api-gateway</module>
         <module>turms-gateway</module>
         <module>turms-service</module>
+        <module>turms-tag-service</module>
 
         <!-- Plugins -->
         <module>turms-plugins/turms-plugin-antispam</module>

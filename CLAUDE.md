@@ -12,8 +12,10 @@ Turms is the most advanced open-source instant messaging engine designed for 100
 ### System Architecture
 
 **Core Server Components:**
+- `turms-api-gateway`: Spring Cloud Gateway-based API gateway providing unified entry point, service routing, authentication, rate limiting, and circuit breaker
 - `turms-gateway`: WebSocket/TCP gateway for client connections, handles authentication, session management, and load balancing
 - `turms-service`: Core business logic service implementing all IM features and providing admin APIs with RBAC
+- `turms-tag-service`: User tagging system with categories, recommendations, tag clouds, and content discovery
 - `turms-server-common`: Shared libraries and utilities used by both gateway and service modules
 - `turms-admin`: Vue 3 web-based administration interface for business data and cluster management
 
@@ -69,8 +71,10 @@ Turms is the most advanced open-source instant messaging engine designed for 100
 mvn clean compile
 
 # Build specific modules
-mvn clean compile -pl turms-service
+mvn clean compile -pl turms-api-gateway
 mvn clean compile -pl turms-gateway
+mvn clean compile -pl turms-service
+mvn clean compile -pl turms-tag-service
 mvn clean compile -pl turms-server-common
 
 # Create executable JARs with all dependencies
@@ -464,3 +468,64 @@ The project enforces strict code quality standards across all components:
 - Performance regression testing
 
 This project represents a production-ready, enterprise-grade instant messaging system with comprehensive tooling, documentation, and development practices suitable for large-scale deployments.
+
+## API Gateway System (turms-api-gateway)
+
+**架构设计:**
+- 基于Spring Cloud Gateway的响应式网关
+- 统一API入口管理和服务路由
+- 支持WebSocket代理和HTTP API路由
+- 集成服务发现、负载均衡、熔断降级
+
+**核心功能:**
+- JWT认证和权限控制
+- 基于Redis的分布式限流
+- Resilience4j熔断器保护
+- CORS跨域支持
+- 请求日志和监控指标
+- 自动服务发现和健康检查
+
+**路由配置:**
+```
+/websocket/** → turms-gateway:10510 (WebSocket)
+/api/v1/im/** → turms-service (即时通讯API)
+/api/v1/tags/** → turms-tag-service (标签服务)
+/api/v1/social/** → turms-social-service (社交关系)
+/api/v1/content/** → turms-content-service (内容管理)
+/api/v1/interaction/** → turms-interaction-service (互动功能)
+/api/v1/recommendation/** → turms-recommendation-service (推荐算法)
+/admin/** → turms-admin (管理界面)
+```
+
+**部署命令:**
+```bash
+# 本地开发启动
+cd turms-api-gateway
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+
+# 生产环境构建
+mvn clean package
+java -jar target/turms-api-gateway-*.jar --spring.profiles.active=prod
+
+# Docker部署
+docker compose -f turms-api-gateway/docker/docker-compose.yml up -d
+```
+
+**监控端点:**
+- 健康检查: GET /actuator/health
+- 网关路由: GET /actuator/gateway/routes  
+- 指标监控: GET /actuator/prometheus
+- 服务状态: GET /actuator/gateway/refresh
+
+**配置要点:**
+- JWT密钥至少32字符长度
+- Redis连接用于限流和缓存
+- Consul用于服务发现(生产环境)
+- 限流参数根据业务需求调整
+- 熔断阈值配置要考虑服务特性
+
+**安全配置:**
+- 生产环境CORS限制具体域名
+- JWT过期时间生产环境建议1小时
+- 限流策略针对不同API设置
+- 监控告警集成Prometheus+Grafana
