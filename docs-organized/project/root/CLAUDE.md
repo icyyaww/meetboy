@@ -2,6 +2,8 @@
 每次回答都必须用中文回答
 在每次执行任务的时候都要说为什么执行这次任务
 每次修改代码后都需要把修改的代码记录到文件中
+不允许出现任何简化版本
+
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 

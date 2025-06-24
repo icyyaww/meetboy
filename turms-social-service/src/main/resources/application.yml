@@ -1,0 +1,198 @@
+# Turms社交关系服务配置文件
+
+# 服务配置
+server:
+  port: 8086
+
+# Spring配置
+spring:
+  application:
+    name: turms-social-service
+  
+  # 配置文件激活
+  profiles:
+    active: dev
+    group:
+      dev:
+        - dev
+        - dev-latest
+      test:
+        - test 
+        - test-latest
+      prod:
+        - prod
+        - prod-latest
+  
+  # 编解码配置
+  codec:
+    max-in-memory-size: 64KB
+  
+  # 自动配置排除
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+
+  # 主类配置
+  main:
+    banner-mode: off
+
+# Turms社交关系服务配置
+turms:
+  social-service:
+    # 基础配置
+    enabled: true
+    port: 8086
+    
+    # 推荐引擎配置
+    recommendation:
+      enabled: true
+      max-recommended-friends: 20
+      default-algorithm: hybrid
+      
+      # 算法配置
+      algorithms:
+        hybrid:
+          enabled: true
+          weight-collaborative: 0.4
+          weight-content: 0.4
+          weight-trending: 0.2
+        collaborative:
+          user-based-enabled: true
+          item-based-enabled: true
+          min-similarity: 0.1
+          neighbor-size: 50
+        content-based:
+          tag-weight: 0.6
+          profile-weight: 0.4
+          min-tag-match: 0.2
+      
+      # 推荐质量控制
+      quality:
+        min-score-threshold: 0.3
+        diversity-factor: 0.1
+        novelty-factor: 0.05
+        enable-explanation: true
+    
+    # 社交图分析配置
+    graph-analysis:
+      enabled: true
+      max-network-depth: 3
+      max-network-nodes: 1000
+      max-path-degrees: 6
+      
+      # 影响力算法权重
+      influence-algorithms:
+        degree-centrality: 0.25
+        betweenness-centrality: 0.20
+        closeness-centrality: 0.20
+        eigenvector-centrality: 0.20
+        pagerank: 0.15
+      
+      # 社区发现配置
+      community-detection:
+        algorithm: louvain
+        resolution: 1.0
+        min-community-size: 3
+        max-communities: 10
+      
+      # 趋势分析配置
+      trend-analysis:
+        default-window-days: 30
+        prediction-horizon-days: 30
+        enable-predictions: true
+    
+    # 性能配置
+    performance:
+      default-page-size: 20
+      max-page-size: 100
+      max-batch-size: 1000
+      enable-cache: true
+      cache-expire-minutes: 30
+      async-processing: true
+      thread-pool-size: 10
+
+# 日志配置
+logging:
+  level:
+    im.turms: INFO
+    org.springframework: WARN
+    org.mongodb: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/turms-social-service.log
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,beans,configprops
+  endpoint:
+    health:
+      show-details: when-authorized
+
+---
+# 开发环境配置
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+turms:
+  social-service:
+    social:
+      max-friends-per-user: 2000  # 开发环境放宽限制
+      max-groups-per-user: 200
+      allow-anonymous-access: true  # 开发环境允许匿名访问
+      recommendation:
+        max-recommended-friends: 50
+        max-recommended-groups: 20
+
+logging:
+  level:
+    im.turms: DEBUG
+    org.springframework.data.mongodb: DEBUG
+
+---
+# 生产环境配置
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+turms:
+  social-service:
+    social:
+      max-friends-per-user: 500  # 生产环境更严格的限制
+      max-groups-per-user: 50
+      max-group-members: 200
+      recommendation:
+        max-recommended-friends: 10
+        max-recommended-groups: 5
+
+logging:
+  level:
+    im.turms: WARN
+
+---
+# 测试环境配置
+spring:
+  config:
+    activate:
+      on-profile: test
+
+turms:
+  social-service:
+    mongo:
+      database: turms-social-test  # 使用独立的测试数据库
+    social:
+      allow-anonymous-access: true
+
+logging:
+  level:
+    im.turms: DEBUG

@@ -1,0 +1,26 @@
+# Maven和构建产物
+.flattened-pom.xml
+*/.flattened-pom.xml
+*/target/
+target/
+*.jar
+!**/src/**/*.jar
+
+# 日志文件
+log/
+logs/
+*.log
+
+# IDE生成文件
+.idea/
+*.iml
+.vscode/
+
+# 临时文件
+temp/
+*.tmp
+*.temp
+
+# 运行时文件
+.pid
+*.pid

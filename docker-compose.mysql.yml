@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: turms-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: turms123456
+      MYSQL_DATABASE: turms_interaction
+      MYSQL_USER: turms
+      MYSQL_PASSWORD: turms123456
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/conf:/etc/mysql/conf.d
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - turms-network
+
+networks:
+  turms-network:
+    driver: bridge

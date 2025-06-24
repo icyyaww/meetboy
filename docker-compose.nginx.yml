@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: turms-nginx
+    ports:
+      - "80:80"
+      - "8510:8510"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - turms-network
+    depends_on:
+      - turms-admin
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  turms-admin:
+    build:
+      context: ./turms-admin
+      dockerfile: Dockerfile
+    container_name: turms-admin
+    ports:
+      - "6510:6510"
+    networks:
+      - turms-network
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+
+networks:
+  turms-network:
+    driver: bridge

@@ -31,6 +31,20 @@ turms:
       enabled: true
     message:
       check-if-target-active-and-not-deleted: false
+    redis:
+      sequence-id:
+        uri-list:
+          - redis://localhost:6379
+      session:
+        uri-list:
+          - redis://localhost:6379
+      location:
+        uri-list:
+          - redis://localhost:6379
+      ip-blocklist:
+        uri: redis://localhost:6379
+      user-id-blocklist:
+        uri: redis://localhost:6379
     mongo:
       admin:
         uri: mongodb://localhost:27017/turms-dev

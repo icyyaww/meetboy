@@ -111,6 +111,61 @@ public class UserController extends BaseController {
                 .map(HttpHandlerResult::okIfTruthy);
     }
 
+    // 交互数据管理端点
+    @GetMapping("interaction/moments/page")
+    public Mono<HttpHandlerResult<ResponseDTO<PaginationDTO<Object>>>> queryMomentsPage(
+            @QueryParam(defaultValue = "0") int page,
+            @QueryParam(required = false) Integer size) {
+        size = getPageSize(size);
+        
+        // 模拟朋友圈数据
+        List<Object> moments = List.of(
+            createMomentData("1", "user1", "今天天气真好！", "public"),
+            createMomentData("2", "user2", "和朋友们一起吃饭", "friends"),
+            createMomentData("3", "user3", "工作中的小确幸", "public")
+        );
+        
+        Mono<Long> count = Mono.just(156L);
+        Flux<Object> momentsFlux = Flux.fromIterable(moments);
+        return HttpHandlerResult.page(count, momentsFlux);
+    }
+    
+    @GetMapping("interaction/likes/page") 
+    public Mono<HttpHandlerResult<ResponseDTO<PaginationDTO<Object>>>> queryLikesPage(
+            @QueryParam(defaultValue = "0") int page,
+            @QueryParam(required = false) Integer size) {
+        size = getPageSize(size);
+        
+        // 模拟点赞数据
+        List<Object> likes = List.of(
+            createLikeData("1", "user1", "moment", "moment1"),
+            createLikeData("2", "user2", "comment", "comment1"),
+            createLikeData("3", "user3", "moment", "moment2")
+        );
+        
+        Mono<Long> count = Mono.just(12450L);
+        Flux<Object> likesFlux = Flux.fromIterable(likes);
+        return HttpHandlerResult.page(count, likesFlux);
+    }
+    
+    @GetMapping("interaction/comments/page")
+    public Mono<HttpHandlerResult<ResponseDTO<PaginationDTO<Object>>>> queryCommentsPage(
+            @QueryParam(defaultValue = "0") int page,
+            @QueryParam(required = false) Integer size) {
+        size = getPageSize(size);
+        
+        // 模拟评论数据
+        List<Object> comments = List.of(
+            createCommentData("1", "user1", "这是一个很棒的分享！", "moment1"),
+            createCommentData("2", "user2", "同意你的观点", "moment1"),
+            createCommentData("3", "user3", "很有意思的内容", "moment2")
+        );
+        
+        Mono<Long> count = Mono.just(8920L);
+        Flux<Object> commentsFlux = Flux.fromIterable(comments);
+        return HttpHandlerResult.page(count, commentsFlux);
+    }
+
     @GetMapping
     @RequiredPermission(USER_QUERY)
     public Mono<HttpHandlerResult<ResponseDTO<Collection<User>>>> queryUsers(
@@ -245,6 +300,45 @@ public class UserController extends BaseController {
         Mono<DeleteResultDTO> deleteMono = userService.deleteUsers(ids, deleteLogically)
                 .map(DeleteResultDTO::get);
         return HttpHandlerResult.okIfTruthy(deleteMono);
+    }
+    
+    // 交互数据创建辅助方法
+    private Object createMomentData(String id, String userId, String content, String visibility) {
+        return new Object() {
+            public String getId() { return id; }
+            public String getUserId() { return userId; }
+            public String getContent() { return content; }
+            public String getVisibility() { return visibility; }
+            public Date getCreatedAt() { return new Date(); }
+            public int getLikesCount() { return (int)(Math.random() * 50); }
+            public int getCommentsCount() { return (int)(Math.random() * 20); }
+            public boolean getHasAttachments() { return false; }
+        };
+    }
+    
+    private Object createLikeData(String id, String userId, String targetType, String targetId) {
+        return new Object() {
+            public String getId() { return id; }
+            public String getUserId() { return userId; }
+            public String getTargetType() { return targetType; }
+            public String getTargetId() { return targetId; }
+            public Date getCreatedAt() { return new Date(); }
+            public String getDeviceType() { return "web"; }
+            public String getIpAddress() { return "192.168.1.100"; }
+        };
+    }
+    
+    private Object createCommentData(String id, String userId, String content, String targetId) {
+        return new Object() {
+            public String getId() { return id; }
+            public String getUserId() { return userId; }
+            public String getUsername() { return "用户" + userId; }
+            public String getContent() { return content; }
+            public String getTargetId() { return targetId; }
+            public String getStatus() { return "approved"; }
+            public Date getCreatedAt() { return new Date(); }
+            public int getLikesCount() { return (int)(Math.random() * 10); }
+        };
     }
 
 }

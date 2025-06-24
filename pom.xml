@@ -91,6 +91,8 @@
         <module>turms-gateway</module>
         <module>turms-service</module>
         <module>turms-tag-service</module>
+        <module>turms-social-service</module>
+        <module>turms-interaction-service</module>
 
         <!-- Plugins -->
         <module>turms-plugins/turms-plugin-antispam</module>

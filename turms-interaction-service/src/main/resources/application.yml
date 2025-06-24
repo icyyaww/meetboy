@@ -1,0 +1,259 @@
+# Turms Interaction Service 配置文件
+server:
+  port: 8531
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: turms-interaction-service
+  
+  profiles:
+    active: dev
+  
+  # 数据库配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/turms_interaction?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: turms
+    password: turms123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 900000
+      connection-timeout: 30000
+      
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 生产环境使用validate，开发环境可使用update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        
+  # MongoDB 配置
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: turms_interaction
+      auto-index-creation: true
+      
+    # Redis 配置
+    redis:
+      host: localhost
+      port: 6379
+      database: 2
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 200
+          max-idle: 20
+          min-idle: 5
+          max-wait: 3000ms
+
+  # Kafka 配置
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      batch-size: 16384
+      buffer-memory: 33554432
+      retries: 3
+      acks: 1
+    consumer:
+      group-id: turms-interaction-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: latest
+      enable-auto-commit: true
+
+  # Jackson 序列化配置
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      write-date-timestamps-as-nanoseconds: false
+    deserialization:
+      read-date-timestamps-as-nanoseconds: false
+    time-zone: Asia/Shanghai
+
+  # WebFlux 配置
+  webflux:
+    static-path-pattern: /static/**
+
+# 服务监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    im.turms.interaction: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    reactor.kafka: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/turms-interaction-service.log
+
+# Turms 互动服务配置
+turms:
+  interaction-service:
+    # 点赞系统配置
+    likes:
+      cache-ttl: 3600  # 缓存过期时间(秒)
+      batch-size: 100  # 批处理大小
+      rate-limit:
+        enabled: true
+        max-requests: 1000  # 每分钟最大请求数
+        window-size: 60     # 时间窗口(秒)
+    
+    # 评论系统配置
+    comments:
+      stream:
+        buffer-size: 1000   # 流缓冲区大小
+        timeout: 30         # 流超时时间(秒)
+        max-connections: 10000  # 最大并发连接数
+      pagination:
+        max-size: 100       # 最大分页大小
+        default-size: 20    # 默认分页大小
+      moderation:
+        enabled: true
+        auto-approve-threshold: 0.8  # 自动通过阈值
+        review-threshold: 0.5        # 人工审核阈值
+    
+    # 事件发布配置
+    events:
+      kafka:
+        topic: turms.interaction.events
+        partitions: 10
+        replication-factor: 1
+      retry:
+        max-attempts: 3
+        backoff-delay: 1000  # 重试延迟(毫秒)
+    
+    # 服务集成配置
+    integration:
+      turms-service:
+        base-url: http://localhost:8510
+        timeout: 5000  # 超时时间(毫秒)
+        retry-attempts: 2
+      content-service:
+        base-url: http://localhost:8520
+        timeout: 3000
+        retry-attempts: 1
+    
+    # 性能配置
+    performance:
+      thread-pool:
+        core-size: 20
+        max-size: 100
+        queue-capacity: 1000
+      connection-pool:
+        max-total: 200
+        max-idle: 50
+        min-idle: 10
+
+---
+# 开发环境配置
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:mysql://localhost:3306/turms_interaction?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: turms
+    password: turms123456
+  jpa:
+    hibernate:
+      ddl-auto: update  # 开发环境自动更新表结构
+    show-sql: true
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: turms_interaction_dev
+    redis:
+      host: localhost
+      port: 6379
+      database: 3
+
+logging:
+  level:
+    root: DEBUG
+    im.turms.interaction: TRACE
+
+turms:
+  interaction-service:
+    comments:
+      moderation:
+        enabled: false  # 开发环境关闭审核
+
+---
+# 测试环境配置
+spring:
+  config:
+    activate:
+      on-profile: test
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: turms_interaction_test
+    redis:
+      host: localhost
+      port: 6379
+      database: 4
+
+---
+# 生产环境配置
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      host: mongo-cluster
+      port: 27017
+      database: turms_interaction_prod
+      username: ${MONGO_USERNAME}
+      password: ${MONGO_PASSWORD}
+    redis:
+      host: redis-cluster
+      port: 6379
+      database: 2
+      password: ${REDIS_PASSWORD}
+
+logging:
+  level:
+    root: WARN
+    im.turms.interaction: INFO
+
+turms:
+  interaction-service:
+    likes:
+      rate-limit:
+        max-requests: 5000  # 生产环境提高限制
+    comments:
+      stream:
+        max-connections: 50000  # 生产环境支持更多连接
+      moderation:
+        enabled: true

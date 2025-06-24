@@ -1,0 +1,117 @@
+# Turms Interaction Service 开发配置 - 无Kafka版本
+server:
+  port: 8531
+
+spring:
+  application:
+    name: turms-interaction-service
+  
+  # 数据库配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/turms_interaction?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: turms
+    password: turms123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 900000
+      connection-timeout: 30000
+      
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: update  # 开发环境自动更新表结构
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        
+  # MongoDB 配置
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: turms_interaction_dev
+      auto-index-creation: true
+      
+    # Redis 配置
+    redis:
+      host: localhost
+      port: 6379
+      database: 3
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 200
+          max-idle: 20
+          min-idle: 5
+          max-wait: 3000ms
+
+  # 禁用Kafka自动配置
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+# 服务监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    im.turms.interaction: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Turms 互动服务配置
+turms:
+  interaction-service:
+    # 点赞系统配置
+    likes:
+      cache-ttl: 3600
+      batch-size: 100
+      rate-limit:
+        enabled: true
+        max-requests: 1000
+        window-size: 60
+    
+    # 评论系统配置
+    comments:
+      stream:
+        buffer-size: 1000
+        timeout: 30
+        max-connections: 10000
+      pagination:
+        max-size: 100
+        default-size: 20
+      moderation:
+        enabled: false  # 开发环境关闭审核
+    
+    # 事件发布配置 - 禁用Kafka
+    events:
+      kafka:
+        enabled: false
+      retry:
+        max-attempts: 1
+        backoff-delay: 1000
+    
+    # 服务集成配置
+    integration:
+      turms-service:
+        base-url: http://localhost:8510
+        timeout: 5000
+        retry-attempts: 2
+      content-service:
+        base-url: http://localhost:8520
+        timeout: 3000
+        retry-attempts: 1
